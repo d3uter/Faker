@@ -1,10 +1,10 @@
 <?php
 
-namespace Faker\ORM\Doctrine;
+namespace Faker\ODM\Doctrine;
 
 use Doctrine\Common\Persistence\ObjectManager;
-use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ODM\EntityManagerInterface;
+use Doctrine\ODM\Mapping\ClassMetadata;
 
 /**
  * Service class for populating a table through a Doctrine Entity class.
