@@ -29,7 +29,7 @@ class EntityPopulator
      *
      * @param ClassMetadata $class
      */
-    public function __construct(ClassMetadata $class)
+    public function __construct(ObjectManager $class)
     {
         $this->class = $class;
     }
