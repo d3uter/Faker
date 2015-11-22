@@ -38,17 +38,18 @@ class Populator
             if (null === $this->manager) {
                 throw new \InvalidArgumentException("No document manager passed to Doctrine Populator.");
             }
-            $entity = new \Faker\ODM\Doctrine\DocumentPopulator($this->manager->getClassMetadata($document));
+            $document = new \Faker\ODM\Doctrine\DocumentPopulator($this->manager->getClassMetadata($document));
         }
-        $entity->setColumnFormatters($entity->guessColumnFormatters($this->generator));
+        
+        $document->setFieldFormatters($document->guessFieldFormatters($this->generator));
         if ($customFieldFormatters) {
-            $entity->mergeColumnFormattersWith($customFieldFormatters);
+            $document->mergeFieldFormattersWith($customFieldFormatters);
         }
-        $entity->mergeModifiersWith($customModifiers);
-        $this->generateId[$entity->getClass()] = $generateId;
+        $document->mergeModifiersWith($customModifiers);
+        $this->generateId[$document->getClass()] = $generateId;
 
-        $class = $entity->getClass();
-        $this->entities[$class] = $entity;
+        $class = $document->getClass();
+        $this->entities[$class] = $document;
         $this->quantities[$class] = $number;
     }
 

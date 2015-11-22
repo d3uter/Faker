@@ -4,7 +4,8 @@ namespace Faker\ODM\Doctrine;
 
 use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\ODM\EntityManagerInterface;
-use Doctrine\ODM\Mapping\ClassMetadata;
+use Doctrine\Common\Persistence\Mapping\ClassMetadata;
+use Doctrine\ODM\MongoDB\Mapping\Annotations\Document;
 
 /**
  * Service class for populating a table through a Doctrine Entity class.
@@ -18,7 +19,7 @@ class DocumentPopulator
     /**
      * @var array
      */
-    protected $columnFormatters = array();
+    protected $fieldFormatters = array();
     /**
      * @var array
      */
@@ -45,22 +46,22 @@ class DocumentPopulator
     /**
      * @param $columnFormatters
      */
-    public function setColumnFormatters($columnFormatters)
+    public function setFieldFormatters($fieldFormatters)
     {
-        $this->columnFormatters = $columnFormatters;
+        $this->fieldFormatters = $fieldFormatters;
     }
 
     /**
      * @return array
      */
-    public function getColumnFormatters()
+    public function getFieldFormatters()
     {
-        return $this->columnFormatters;
+        return $this->fieldFormatters;
     }
 
-    public function mergeColumnFormattersWith($columnFormatters)
+    public function mergeFieldFormattersWith($fieldFormatters)
     {
-        $this->columnFormatters = array_merge($this->columnFormatters, $columnFormatters);
+        $this->fieldFormatters = array_merge($this->fieldFormatters, $fieldFormatters);
     }
 
     /**
@@ -91,11 +92,11 @@ class DocumentPopulator
      * @param \Faker\Generator $generator
      * @return array
      */
-    public function guessColumnFormatters(\Faker\Generator $generator)
+    public function guessFieldFormatters(\Faker\Generator $generator)
     {
         $formatters = array();
         $nameGuesser = new \Faker\Guesser\Name($generator);
-        $columnTypeGuesser = new ColumnTypeGuesser($generator);
+        $columnTypeGuesser = new FieldTypeGuesser($generator);
         foreach ($this->class->getFieldNames() as $fieldName) {
             if ($this->class->isIdentifier($fieldName) || !$this->class->hasField($fieldName)) {
                 continue;
@@ -120,16 +121,22 @@ class DocumentPopulator
             $relatedClass = $this->class->getAssociationTargetClass($assocName);
 
             $unique = $optional = false;
-            $mappings = $this->class->getAssociationMappings();
-            foreach ($mappings as $mapping) {
-                if ($mapping['targetEntity'] == $relatedClass) {
-                    if ($mapping['type'] == ClassMetadata::ONE_TO_ONE) {
-                        $unique = true;
-                        $optional = isset($mapping['joinColumns'][0]['nullable']) ? $mapping['joinColumns'][0]['nullable'] : false;
-                        break;
-                    }
-                }
-            }
+            $mappings = $this->class->associationMappings;
+//            foreach ($mappings as $mapping) {
+//                if ($mapping['targetDocument'] == $relatedClass) {
+//                    if ($mapping['type'] == ClassMetadata::ONE_TO_ONE) {
+//                        $unique = true;
+//                        $optional = isset($mapping['joinColumns'][0]['nullable']) ? $mapping['joinColumns'][0]['nullable'] : false;
+//                        break;
+//                    }
+//
+//
+//
+//
+//
+//
+//                }
+//            }
 
             $index = 0;
             $formatters[$assocName] = function ($inserted) use ($relatedClass, &$index, $unique, $optional) {
@@ -164,10 +171,31 @@ class DocumentPopulator
      */
     public function execute(ObjectManager $manager, $insertedEntities, $generateId = false)
     {
+        /** @var Document $obj */
         $obj = $this->class->newInstance();
 
-        $this->fillColumns($obj, $insertedEntities);
+        $this->fillFields($obj, $insertedEntities);
         $this->callMethods($obj, $insertedEntities);
+
+
+
+//        $mappings = $this->class->associationMappings;
+//            foreach ($mappings as $mapping) {
+//                if ($mapping['targetDocument'] == $obj) {
+//                    if ($mapping['type'] == ClassMetadata::EMBED_ONE) {
+//
+//                        1==1;
+//                    }
+//                }
+//            }
+
+        if($this->class->isEmbeddedDocument){
+
+
+            //$this->class->reflFields[$idName]->setValue($obj);
+            //setFieldValue
+            $this->class->reflFields[$field]->setValue($obj);
+        }
 
         if ($generateId) {
             $idsName = $this->class->getIdentifier();
@@ -177,14 +205,18 @@ class DocumentPopulator
             }
         }
 
+
+
+
+
         $manager->persist($obj);
 
         return $obj;
     }
 
-    private function fillColumns($obj, $insertedEntities)
+    private function fillFields($obj, $insertedEntities)
     {
-        foreach ($this->columnFormatters as $field => $format) {
+        foreach ($this->fieldFormatters as $field => $format) {
             if (null !== $format) {
                 $value = is_callable($format) ? $format($insertedEntities, $obj) : $format;
                 $this->class->reflFields[$field]->setValue($obj, $value);
